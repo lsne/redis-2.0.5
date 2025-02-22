@@ -59,8 +59,9 @@ sds.o: sds.c sds.h zmalloc.h
 zipmap.o: zipmap.c zmalloc.h
 zmalloc.o: zmalloc.c config.h
 
+# 需要在编译命令的结尾加上 -lm, 要不然在 ubuntu 22.04 环境编译不过去
 redis-server: $(OBJ)
-	$(CC) -o $(PRGNAME) $(CCOPT) $(DEBUG) $(OBJ)
+	$(CC) -o $(PRGNAME) $(CCOPT) $(DEBUG) $(OBJ) -lm
 	@echo ""
 	@echo "Hint: To run the test-redis.tcl script is a good idea."
 	@echo "Launch the redis server with ./redis-server, then in another"

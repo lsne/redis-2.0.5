@@ -1733,23 +1733,23 @@ static void initServerConfig() {
 static void initServer() {
     int j;
 
-    signal(SIGHUP, SIG_IGN);
-    signal(SIGPIPE, SIG_IGN);
-    setupSigSegvAction();
+    signal(SIGHUP, SIG_IGN);     // 处理信号, 如: kill -1
+    signal(SIGPIPE, SIG_IGN);   // 处理信号, 如: kill -13
+    setupSigSegvAction();                    // 处理信号, 如: kill -11
 
-    server.mainthread = pthread_self();
-    server.devnull = fopen("/dev/null","w");
+    server.mainthread = pthread_self();                         // 获取当前线程的 ID
+    server.devnull = fopen("/dev/null","w");    // 打开 /dev/null, 并将文件fd返回给 server.devnull
     if (server.devnull == NULL) {
         redisLog(REDIS_WARNING, "Can't open /dev/null: %s", server.neterr);
         exit(1);
     }
-    server.clients = listCreate();
-    server.slaves = listCreate();
-    server.monitors = listCreate();
-    server.objfreelist = listCreate();
-    createSharedObjects();
-    server.el = aeCreateEventLoop();
-    server.db = zmalloc(sizeof(redisDb)*server.dbnum);
+    server.clients = listCreate();       // 创建客户端列表
+    server.slaves = listCreate();       // 创建从节点列表
+    server.monitors = listCreate();     // 创建monitor列表
+    server.objfreelist = listCreate();  // 创建 object free 列表
+    createSharedObjects();              // 创建共享的公共对象
+    server.el = aeCreateEventLoop();    // 
+    server.db = zmalloc(sizeof(redisDb)*server.dbnum);  // 给 server.db 分配内存空间, 以保存每一个 db 的 key 数量, key过期时间等状态; 注意这里给每一个 db 分配的内存虽然很小, 但如果 db 数量太多, 也会大量的消耗内存 
     server.fd = anetTcpServer(server.neterr, server.port, server.bindaddr);
     if (server.fd == -1) {
         redisLog(REDIS_WARNING, "Opening TCP port: %s", server.neterr);
@@ -10842,20 +10842,20 @@ static void daemonize(void) {
     int fd;
     FILE *fp;
 
-    if (fork() != 0) exit(0); /* parent exits */
+    if (fork() != 0) exit(0); /* parent exits */  // fork() 创建子进程, 然后把父进程(主进程)退出, 新开的子进程的父进程号就会变成 1。 这是实现守护进程的实现方式
     setsid(); /* create a new session */
 
     /* Every output goes to /dev/null. If Redis is daemonized but
      * the 'logfile' is set to 'stdout' in the configuration file
      * it will not log at all. */
-    if ((fd = open("/dev/null", O_RDWR, 0)) != -1) {
-        dup2(fd, STDIN_FILENO);
-        dup2(fd, STDOUT_FILENO);
-        dup2(fd, STDERR_FILENO);
+    if ((fd = open("/dev/null", O_RDWR, 0)) != -1) {  // 如果打开文件操作成功。 这里因为打开的是特殊文件 /dev/null, 所以权限给的是 0
+        dup2(fd, STDIN_FILENO);  // 重定向标准输入到 fd 文件
+        dup2(fd, STDOUT_FILENO); // 重定向标准输出到 fd 文件
+        dup2(fd, STDERR_FILENO); // 重定向标准错误输出到 fd 文件
         if (fd > STDERR_FILENO) close(fd);
     }
     /* Try to write the pid file */
-    fp = fopen(server.pidfile,"w");
+    fp = fopen(server.pidfile,"w");   // 将 pid 写入 pid 文件
     if (fp) {
         fprintf(fp,"%d\n",getpid());
         fclose(fp);
@@ -10874,27 +10874,27 @@ static void usage() {
 }
 
 int main(int argc, char **argv) {
-    time_t start;
+    time_t start;        // 创建一个时间类型的变量名称
 
-    initServerConfig();
+    initServerConfig();  // 先将所有参数全部设置好默认值
     if (argc == 2) {
         if (strcmp(argv[1], "-v") == 0 ||
             strcmp(argv[1], "--version") == 0) version();
         if (strcmp(argv[1], "--help") == 0) usage();
-        resetServerSaveParams();
-        loadServerConfig(argv[1]);
-    } else if ((argc > 2)) {
+        resetServerSaveParams();              // 如果指定了配置文件, 则将设置的默认 save 快照保存策略重置清理
+        loadServerConfig(argv[1]);  // 根据配置文件配置, 设置相关参数
+    } else if ((argc > 2)) {                 // 命令行只能有 程序本身 + 配置文件名称, 如果出现多余的参数, 直接报错
         usage();
-    } else {
+    } else {                                  // 不指定配置文件时,会以默认参数启动。这里只是输出一个警告的提示, 不做其他动作
         redisLog(REDIS_WARNING,"Warning: no config file specified, using the default config. In order to specify a config file use 'redis-server /path/to/redis.conf'");
     }
-    if (server.daemonize) daemonize();
-    initServer();
+    if (server.daemonize) daemonize();  // 守护进程方式启动
+    initServer();    // 初始化服务器
     redisLog(REDIS_NOTICE,"Server started, Redis version " REDIS_VERSION);
 #ifdef __linux__
-    linuxOvercommitMemoryWarning();
+    linuxOvercommitMemoryWarning();  // 如果是 linux 系统, 则会检测内核参数 overcommit_memory 是否设置为1, 没有设置为1则会输出一个警告信息
 #endif
-    start = time(NULL);
+    start = time(NULL);       // 获取当前时间
     if (server.appendonly) {
         if (loadAppendOnlyFile(server.appendfilename) == REDIS_OK)
             redisLog(REDIS_NOTICE,"DB loaded from append only file: %ld seconds",time(NULL)-start);

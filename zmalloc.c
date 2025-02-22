@@ -76,10 +76,10 @@ static void zmalloc_oom(size_t size) {
 }
 
 void *zmalloc(size_t size) {
-    void *ptr = malloc(size+PREFIX_SIZE);
+    void *ptr = malloc(size+PREFIX_SIZE);  // 分配内存时, 多分配一个额外的内存空间(PREFIX_SIZE 大概 4 Byte 或 8 Byte) 用来存储统计值
 
-    if (!ptr) zmalloc_oom(size);
-#ifdef HAVE_MALLOC_SIZE
+    if (!ptr) zmalloc_oom(size);  // 分配失败就OOM, 并强制退出程序
+#ifdef HAVE_MALLOC_SIZE           // 如果有 
     increment_used_memory(redis_malloc_size(ptr));
     return ptr;
 #else
