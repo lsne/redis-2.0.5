@@ -1733,13 +1733,13 @@ static void initServerConfig() {
 static void initServer() {
     int j;
 
-    signal(SIGHUP, SIG_IGN);     // 处理信号, 如: kill -1
-    signal(SIGPIPE, SIG_IGN);   // 处理信号, 如: kill -13
-    setupSigSegvAction();                    // 处理信号, 如: kill -11
+    signal(SIGHUP, SIG_IGN);     //  忽略信号: SIGHUP, 即无视: kill -1
+    signal(SIGPIPE, SIG_IGN);   // 忽略信号: SIGPIPE, 即无视: kill -13
+    setupSigSegvAction();                    // 处理其他信号, 如: kill -2, kill -11 等
 
     server.mainthread = pthread_self();                         // 获取当前线程的 ID
-    server.devnull = fopen("/dev/null","w");    // 打开 /dev/null, 并将文件fd返回给 server.devnull
-    if (server.devnull == NULL) {
+    server.devnull = fopen("/dev/null","w");    // 打开 /dev/null, 并将文件描述符(fd)返回给 server.devnull 变量
+    if (server.devnull == NULL) {                               // 如果 /dev/null 打开失败, 则退出程序
         redisLog(REDIS_WARNING, "Can't open /dev/null: %s", server.neterr);
         exit(1);
     }
